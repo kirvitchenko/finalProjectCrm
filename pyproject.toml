@@ -1,0 +1,8 @@
+[project]
+name = "finalProjectCrm"
+version = "0.1.0"
+dependencies = [
+    "django>=6.0.2",
+    "djangorestframework>=3.16.1",
+    "ruff>=0.15.2",
+]
