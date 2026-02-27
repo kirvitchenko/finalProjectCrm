@@ -9,40 +9,40 @@ from crm.models import Task
 class TaskCreateView(View):
 
     def get(self, request):
-        clean_create_task_form = TaskCreateForm()
-        return render(request, 'task_create.html', context={'form': clean_create_task_form})
+        form = TaskCreateForm()
+        return render(request, 'task_create.html', {'form': form})
 
     def post(self, request):
-        create_task_form = TaskCreateForm(request.POST)
-        if create_task_form.is_valid():
-            created_task = create_task_form.save(commit=False)
-            created_task.author = request.user
-            created_task.save()
-            return redirect('task_profile', task_pk=created_task.pk)
-        messages.error(request, f'Ошибка в форме')
-        return render(request, 'task_create.html', context={'form': create_task_form})
+        form = TaskCreateForm(request.POST)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.author = request.user
+            task.save()
+            return redirect('task_profile', task_pk=task.pk)
+        messages.error(request, 'Ошибка в форме')
+        return render(request, 'task_create.html', context={'form': form})
+
 
 class TaskProfile(View):
 
     def get(self, request, task_pk):
-        task = get_object_or_404(Task, pk=task_pk)
+        task = get_object_or_404(Task.objects.prefetch_related('comments', 'comments__user'), pk=task_pk)
         return render(request, 'task_profile.html', context={'task': task})
 
 class TaskUpdateView(View):
 
     def get(self, request, task_pk):
         task = get_object_or_404(Task, pk=task_pk)
-        task_update_form = TaskUpdateForm(instance=task)
-        return render(request, 'task_update.html', context={'form': task_update_form})
-
+        form = TaskUpdateForm(instance=task)
+        return render(request, 'task_update.html', {'form': form})
 
     def post(self, request, task_pk):
         task = get_object_or_404(Task, pk=task_pk)
-        task_update_form = TaskUpdateForm(request.POST, instance=task)
-        if task_update_form.is_valid():
-            task_update_form.save()
+        form = TaskUpdateForm(request.POST, instance=task)  # ✅ form
+        if form.is_valid():
+            form.save()
             return redirect('task_profile', task_pk=task.pk)
-        return render(request, 'task_update.html', context={'form': task_update_form})
+        return render(request, 'task_update.html', context={'form': form})
 
 class TaskDeleteView(View):
 
