@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
-from crm.models import Team, TeamUser
+from crm.models import Team, TeamUser, Task
 
 
 class RegisterForm(forms.ModelForm):
@@ -75,3 +75,17 @@ class UpdateUserTeamRoleForm(forms.ModelForm):
     class Meta:
         model = TeamUser
         fields = ['role']
+
+class TaskCreateForm(forms.ModelForm):
+    class Meta:
+        model = Task
+        fields = ['team', 'status', 'description', 'deadline']
+
+class TaskForm(forms.ModelForm):
+    class Meta:
+        model = Task
+        fields = '__all__'
+
+class TaskUpdateForm(forms.ModelForm):
+    class Meta:
+        fields = ['performer', 'deadline', 'description', 'status']

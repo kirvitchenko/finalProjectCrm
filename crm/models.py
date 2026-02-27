@@ -53,7 +53,7 @@ class Task(models.Model):
     description = models.TextField()
     deadline = models.DateTimeField(null=True)
     created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(null=True)
+    updated_at = models.DateTimeField(null=True, auto_now=True)
 
     class Meta:
         verbose_name = "Задача"
