@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
-from crm.models import Team
+from crm.models import Team, TeamUser
 
 
 class RegisterForm(forms.ModelForm):
@@ -70,3 +70,8 @@ class TeamForm(forms.ModelForm):
     class Meta:
         model = Team
         fields = ["name"]
+
+class UpdateUserTeamRoleForm(forms.ModelForm):
+    class Meta:
+        model = TeamUser
+        fields = ['role']

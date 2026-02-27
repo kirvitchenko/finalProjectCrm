@@ -29,7 +29,10 @@ class TeamUser(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["user", "team"], name="unique_user_team")
+            models.UniqueConstraint(
+                fields=['user'],  # Только user, без team!
+                name='unique_user_one_team'
+            )
         ]
 
 
