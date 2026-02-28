@@ -5,72 +5,73 @@ from django.template.context_processors import request
 from django.views import View
 
 from crm.forms import LoginForm, RegisterForm, UserChangeForm
+from crm.models import Evaluation
 
 
-class RegisterView(View):
+class UserRegisterView(View):
 
     def get(self, request):
-        clean_user_register_form = RegisterForm()
-        return render(request, 'register.html', context={'form': clean_user_register_form})
+        form = RegisterForm()
+        return render(request, 'user_register.html', {'form': form})
 
     def post(self, request):
-        user_register_form = RegisterForm(request.POST)
-        if user_register_form.is_valid():
-            user = user_register_form.save()
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
             login(request, user)
             return redirect('profile', user_pk=user.pk)
         else:
-            return render(request, 'register.html', context={'form': user_register_form})
+            return render(request, 'user_register.html', {'form': form})
 
 
-class LoginView(View):
+class UserLoginView(View):
 
     def get(self, request):
-        clean_user_login_form = LoginForm()
-        return render(request, 'login.html', context={'form': clean_user_login_form})
+        clean_form = LoginForm()
+        return render(request, 'user_login.html', {'form': clean_form})
 
     def post(self, request):
-        user_login_form = LoginForm(request.POST)
-        if user_login_form.is_valid():
-            login(request, user_login_form.user)
-            return render(request, 'profile.html', context={'user': user_login_form.user})
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            login(request, form.user)
+            return render(request, 'user_profile.html', {'user': form.user})
         else:
-            clean_user_login_form = LoginForm()
-            return render(request, 'login.html', context={'form': clean_user_login_form})
+            return render(request, 'user_login.html', {'form': form})
 
 
-class LogoutView(View):
+class UserLogoutView(View):
 
     def post(self, request):
         logout(request)
         return redirect('home')
 
 
-class ProfileView(View):
+class UserProfileView(View):
 
     def get(self, request, user_pk):
         user = get_object_or_404(User, pk=user_pk)
-        return render(request, 'profile.html', context={'user': user})
+        evaluations = Evaluation.objects.filter(task__performer=user).select_related('task')
+        return render(request, 'user_profile.html', {'user': user, 'evaluations': evaluations})
 
 
-class ProfileUpdateView(View):
+class UserUpdateView(View):
 
     def get(self, request, pk):
         user = get_object_or_404(User, pk=pk)
-        user_profile_form = UserChangeForm(instance=user)
-        return render(request, 'update_profile.html', context={'form': user_profile_form})
+        form = UserChangeForm(instance=user)
+        return render(request, 'profile_update.html', {'form': form})
 
     def post(self, request, pk):
         user = get_object_or_404(User, pk=pk)
-        user_profile_form = UserChangeForm(request.POST, instance=user)
-        if user_profile_form.is_valid():
-            user_profile_form.save()
+        form = UserChangeForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
             return redirect('profile', user_pk=user.pk)
         else:
-            return render(request, 'update_profile.html', context={'form': user_profile_form})
+            return render(request, 'profile_update.html', {'form': form})
 
 
-class UserDelete(View):
+class UserDeleteView(View):
 
     def post(self, request, pk):
         user = get_object_or_404(User, pk=pk)

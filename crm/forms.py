@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
-from crm.models import Team, TeamUser, Task
+from crm.models import Team, TeamUser, Task, Evaluation
 
 
 class RegisterForm(forms.ModelForm):
@@ -89,3 +89,11 @@ class TaskForm(forms.ModelForm):
 class TaskUpdateForm(forms.ModelForm):
     class Meta:
         fields = ['performer', 'deadline', 'description', 'status']
+
+class EvaluationForm(forms.ModelForm):
+    class Meta:
+        model = Evaluation
+        fields = ['evaluation']
+        widgets = {
+            'evaluation': forms.Select
+        }
