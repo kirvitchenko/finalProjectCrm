@@ -1,0 +1,24 @@
+{% extends 'crm/base.html'%}
+
+
+{% block content %}
+<div class="profile">
+    <h1>Профиль пользователя</h1>
+
+    <div class="user-info">
+        <p><strong>Логин:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+    </div>
+
+    <div class="actions">
+        <form method="get" action="{% url 'user_update' user.pk %}">
+    {% csrf_token %}
+    <button type="submit">Редактировать</button>
+</form>
+        <form method="post" action="{% url 'user_delete' user.pk %}">
+    {% csrf_token %}
+    <button type="submit">Удалить</button>
+</form>
+    </div>
+</div>
+{% endblock %}

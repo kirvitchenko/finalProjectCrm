@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
-from crm.models import Team, TeamUser, Task, Evaluation
+from crm.models import Team, TeamUser, Task, Evaluation, Meeting, MeetingUser
 
 
 class RegisterForm(forms.ModelForm):
@@ -53,7 +53,7 @@ class LoginForm(forms.Form):
         try:
             user = User.objects.get(email=email)
             self.user = authenticate(username=user.username, password=password)
-        except User.DoesNotExists:
+        except User.DoesNotExist:
             self.user = None
         if not self.user:
             raise forms.ValidationError("Неверный логин или пароль")
@@ -71,29 +71,44 @@ class TeamForm(forms.ModelForm):
         model = Team
         fields = ["name"]
 
+
 class UpdateUserTeamRoleForm(forms.ModelForm):
     class Meta:
         model = TeamUser
-        fields = ['role']
+        fields = ["role"]
+
 
 class TaskCreateForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ['team', 'status', 'description', 'deadline']
+        fields = ["status", "description", "deadline"]
+
 
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = '__all__'
+        fields = "__all__"
+
 
 class TaskUpdateForm(forms.ModelForm):
     class Meta:
-        fields = ['performer', 'deadline', 'description', 'status']
+        fields = ["performer", "deadline", "description", "status"]
+
 
 class EvaluationForm(forms.ModelForm):
     class Meta:
         model = Evaluation
-        fields = ['evaluation']
-        widgets = {
-            'evaluation': forms.Select
-        }
+        fields = ["evaluation"]
+        widgets = {"evaluation": forms.Select}
+
+
+class MeetingCreateForm(forms.ModelForm):
+    class Meta:
+        model = Meeting
+        fields = ["start_datetime", "end_datetime", "name", "description"]
+
+
+class MeetingAddUserForm(forms.ModelForm):
+    class Meta:
+        model = MeetingUser
+        fields = ["user"]

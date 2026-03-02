@@ -17,6 +17,7 @@ class Team(models.Model):
     created_at: Дата и время создании команды
     updated_at: Дата и время обновления команды
     """
+
     name = models.CharField(max_length=30)
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -35,6 +36,7 @@ class TeamUser(models.Model):
     user: внешний ключ на пользователя добавленного в команду
     role: роль пользователя в команде, определяет его права доступа(user, manager, admin)
     """
+
     class Role(models.TextChoices):
         USER = "user", "Обычный пользователь"
         MANAGER = "manager", "Менеджер"
@@ -48,11 +50,9 @@ class TeamUser(models.Model):
         """
         Проверка на уникальность. Один пользователь может состоять только в одной команде единовременно.
         """
+
         constraints = [
-            models.UniqueConstraint(
-                fields=['user'],
-                name='unique_user_one_team'
-            )
+            models.UniqueConstraint(fields=["user"], name="unique_user_one_team")
         ]
 
 
@@ -104,6 +104,7 @@ class Comment(models.Model):
     user: Внешний ключ на пользователя оставившего комментарий
     task: Внешний ключ на задачу к которой относится комментарий
     """
+
     created_at = models.DateTimeField(default=timezone.now)
     text = models.TextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
@@ -119,8 +120,15 @@ class Meeting(models.Model):
     Модель встречи в системе.
 
     Встречи могут назначаться разными пользователями.
-    start_datetime, end_datetime - Дата и время начала и конца встречи
+    creator: Создатель встречи
+    start_datetime, end_datetime: Дата и время начала и конца встречи
     """
+
+    creator = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="created_meetings"
+    )
+    name = models.CharField(max_length=30)
+    description = models.TextField()
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
 
@@ -153,7 +161,10 @@ class MeetingUser(models.Model):
     user: Внешний ключ на пользователя
     meeting: Внишний ключ на встречу
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="meetings")
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="meeting_participations"
+    )
     meeting = models.ForeignKey(
         Meeting, on_delete=models.CASCADE, related_name="participants"
     )
@@ -186,6 +197,7 @@ class Evaluation(models.Model):
     user: Внешний ключ на пользователя
     task: Внешний ключ на задачу
     """
+
     class EvaluationChoices(models.IntegerChoices):
         A = 5, "Отлично"
         B = 4, "Хорошо"
@@ -194,8 +206,9 @@ class Evaluation(models.Model):
         E = 1, "Плохо"
 
     evaluation = models.IntegerField(choices=EvaluationChoices, null=True)
-    task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name='evaluation')
-
+    task = models.OneToOneField(
+        Task, on_delete=models.CASCADE, related_name="evaluation"
+    )
 
     @property
     def user(self):
@@ -205,10 +218,9 @@ class Evaluation(models.Model):
         """
         Проверяем уникальность - одному пользователю не может быть выставлено более одной оценки за задачу
         """
+
         constraints = [
-            models.UniqueConstraint(
-                fields=["task"], name="unique_task_evaluation"
-            )
+            models.UniqueConstraint(fields=["task"], name="unique_task_evaluation")
         ]
         verbose_name = "Оценка"
         verbose_name_plural = "Оценки"
