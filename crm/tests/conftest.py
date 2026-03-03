@@ -9,12 +9,14 @@ from crm.models import Team, Task, Meeting
 
 @pytest.fixture
 def user():
-    return User.objects.create_user(email='email@email.com',username="username", password="password")
+    return User.objects.create_user(
+        email="email@email.com", username="username", password="password"
+    )
 
 
 @pytest.fixture
 def team(user):
-    return Team.objects.create(name="team", creator=user)
+    return Team.objects.create(name="test team", creator=user)
 
 
 @pytest.fixture
@@ -36,3 +38,10 @@ def meeting(user):
         end_datetime=end,
     )
     return meeting
+
+
+@pytest.fixture
+def superuser(user):
+    return User.objects.create_user(
+        username="admin", password="admin", is_superuser=True
+    )
