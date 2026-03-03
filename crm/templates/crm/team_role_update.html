@@ -1,0 +1,36 @@
+{% extends 'crm/base.html' %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1>Изменение роли</h1>
+        <p class="subtitle">Пользователь: <strong>{{ team_user.user.username }}</strong></p>
+        <p class="subtitle">Команда: <strong>{{ team_user.team.name }}</strong></p>
+    </div>
+
+    {# Изменять роль может создатель команды или админ по роли #}
+    {% if request.user == team_user.team.creator or user_role == 'admin' %}
+    <form method="post" class="form">
+        {% csrf_token %}
+
+        {% for field in form %}
+        <div class="form-group">
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.errors %}
+                <div class="error">{{ field.errors }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <a href="{% url 'team_retrieve' team_user.team.pk %}" class="btn">Отмена</a>
+        </div>
+    </form>
+    {% else %}
+        <p>У вас нет прав для изменения ролей в этой команде.</p>
+        <a href="{% url 'team_retrieve' team_user.team.pk %}" class="btn">Назад к команде</a>
+    {% endif %}
+</div>
+{% endblock %}

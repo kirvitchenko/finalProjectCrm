@@ -1,0 +1,62 @@
+{% extends 'crm/base.html' %}
+
+{% block content %}
+<div class="meeting-detail">
+    <div class="meeting-header">
+        <h1>Встреча {{ meeting.start_datetime|date:"d.m.Y" }}</h1>
+        <!-- Только создатель может отменить встречу -->
+        {% if user == meeting.creator %}
+        <form method="post" action="{% url 'meeting_cancel' meeting.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Отменить встречу?')">🗑️ Отменить</button>
+        </form>
+        {% endif %}
+    </div>
+
+    <div class="meeting-info">
+        <div class="info-item">
+            <span class="label">Начало:</span>
+            <span class="value">{{ meeting.start_datetime|date:"d.m.Y H:i" }}</span>
+        </div>
+        <div class="info-item">
+            <span class="label">Окончание:</span>
+            <span class="value">{{ meeting.end_datetime|date:"d.m.Y H:i" }}</span>
+        </div>
+        <div class="info-item">
+            <span class="label">Создатель:</span>
+            <span class="value">{{ meeting.creator.username }}</span>
+        </div>
+    </div>
+
+    <div class="participants-section">
+        <h2>Участники ({{ meeting.participants.count }})</h2>
+
+        {% if meeting.participants.all %}
+        <ul class="participants-list">
+            {% for participant in meeting.participants.all %}
+            <li>{{ participant.user.username }}</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty">Нет участников</p>
+        {% endif %}
+
+        <!-- Только создатель может добавлять участников -->
+        {% if user == meeting.creator %}
+        <div class="add-participant">
+            <h3>Добавить участника</h3>
+            <form method="post" action="{% url 'meeting_add_user' meeting.pk %}" class="add-participant-form">
+                {% csrf_token %}
+                <select name="user_pk" required>
+                    <option value="" disabled selected>-- Выберите пользователя --</option>
+                    {% for user in available_users %}
+                    <option value="{{ user.pk }}">{{ user.username }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn">Добавить</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

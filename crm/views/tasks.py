@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 
-from crm.forms import TaskCreateForm, TaskUpdateForm, EvaluationForm
+from crm.forms import TaskCreateForm, TaskUpdateForm, EvaluationForm, CommentCreateForm
 from crm.models import Task, Evaluation, Team
 from crm.permissions import ManagerRequiredMixin, check_task_owner, AdminRequiredMixin
 
@@ -10,7 +10,7 @@ from crm.permissions import ManagerRequiredMixin, check_task_owner, AdminRequire
 class TaskCreateView(ManagerRequiredMixin, View):
     def get(self, request, team_pk):
         form = TaskCreateForm()
-        return render(request, "task_create.html", {"form": form})
+        return render(request, "crm/task_create.html", {"form": form})
 
     def post(self, request, team_pk):
         form = TaskCreateForm(request.POST)
@@ -20,15 +20,15 @@ class TaskCreateView(ManagerRequiredMixin, View):
             task.author = request.user
             task.team = team
             task.save()
-            return redirect("task_profile", task_pk=task.pk)
+            return redirect("task_retrieve", task_pk=task.pk)
         messages.error(request, "Ошибка в форме")
-        return render(request, "task_create.html", {"form": form})
+        return render(request, "crm/task_create.html", {"form": form})
 
 
 class TaskListView(View):
     def get(self, request, team_pk):
-        tasks = Task.objects.filter(team__pk=team_pk).prefetch_related("evaluations")
-        return render(request, "task_list.html", {"tasks": tasks})
+        tasks = Task.objects.filter(team__pk=team_pk).prefetch_related("evaluation")
+        return render(request, "crm/task_list.html", {"tasks": tasks, 'team_pk': team_pk})
 
 
 class TaskRetrieveView(View):
@@ -45,29 +45,45 @@ class TaskRetrieveView(View):
         context = {"task": task, "evaluation": evaluation}
         if request.user.is_superuser:
             context["evaluation_form"] = EvaluationForm(instance=evaluation)
-        return render(request, "task_retrieve.html", context)
-
+        return render(request, "crm/task_retrieve.html", context)
 
 
 class TaskUpdateView(View):
-    def get(self, request, task_pk, team_pk):
+    def get(self, request, task_pk):
         task = get_object_or_404(Task, pk=task_pk)
         check_task_owner(request.user, task)
         form = TaskUpdateForm(instance=task)
-        return render(request, "task_update.html", {"form": form})
+        return render(request, "crm/task_update.html", {"form": form, 'task': task})
 
-    def post(self, request, task_pk, team_pk):
+    def post(self, request, task_pk):
         task = get_object_or_404(Task, pk=task_pk)
         check_task_owner(request.user, task)
         form = TaskUpdateForm(request.POST, instance=task)  # ✅ form
         if form.is_valid():
-            form.save()
-            return redirect("task_profile", task_pk=task.pk)
-        return render(request, "task_update.html", {"form": form})
+            task = form.save(commit=False)
+            if task.performer:
+                task.status = Task.Status.processing
+            task.save()
+            return redirect("task_retrieve", task_pk=task.pk)
+        return render(request, "crm/task_update.html", {"form": form, 'task': task})
+
+
+class TaskDoneView(View):
+    def post(self, request, task_pk):
+        task = get_object_or_404(Task, pk=task_pk)
+
+        if request.user == task.performer:
+            task.status = Task.Status.done
+            task.save()
+            messages.success(request, 'Задача отмечена как выполненная')
+        else:
+            messages.error(request, 'Только исполнитель может отметить задачу как выполненную')
+
+        return redirect('task_retrieve', task_pk=task.pk)
 
 
 class TaskDeleteView(View):
-    def post(self, request, task_pk, team_pk):
+    def post(self, request, task_pk):
         task = get_object_or_404(Task, pk=task_pk)
         check_task_owner(request.user, task)
         task.delete()
@@ -75,7 +91,7 @@ class TaskDeleteView(View):
 
 
 class TaskEvaluationView(AdminRequiredMixin, View):
-    def post(self, request, task_pk, team_pk):
+    def post(self, request, task_pk):
         task = get_object_or_404(Task, pk=task_pk)
         evaluation, created = Evaluation.objects.update_or_create(
             task=task, defaults={"evaluation": request.POST.get("evaluation")}
@@ -85,3 +101,16 @@ class TaskEvaluationView(AdminRequiredMixin, View):
             f"Оценка {evaluation.get_evaluation_display()} сохранена для задачи",
         )
         return redirect("task_retrieve", task_pk=task.pk)
+
+class CommentCreateView(View):
+
+    def post(self, request, task_pk):
+        task = get_object_or_404(Task, pk=task_pk)
+        form = CommentCreateForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.user = request.user
+            comment.task = task
+            comment.save()
+        return redirect('task_retrieve', task_pk=task_pk)
+

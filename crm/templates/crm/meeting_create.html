@@ -2,11 +2,11 @@
 
 {% block content %}
 <div class="form-container">
-    <h1>Редактирование профиля</h1>
-
+    <h1>Создание встречи</h1>
+    
     <form method="post" class="form">
         {% csrf_token %}
-
+        
         {% for field in form %}
         <div class="form-group">
             {{ field.label_tag }}
@@ -14,15 +14,12 @@
             {% if field.errors %}
                 <div class="error">{{ field.errors }}</div>
             {% endif %}
-            {% if field.help_text %}
-                <small class="help-text">{{ field.help_text }}</small>
-            {% endif %}
         </div>
         {% endfor %}
-
+        
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Сохранить</button>
-            <a href="{% url 'user_profile' user.pk %}" class="btn">Отмена</a>
+            <button type="submit" class="btn btn-primary">Создать</button>
+            <a href="{% url 'meeting_list' %}" class="btn">Отмена</a>
         </div>
     </form>
 </div>

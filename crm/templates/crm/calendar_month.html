@@ -1,0 +1,48 @@
+{% extends 'crm/base.html' %}
+
+{% block content %}
+<div class="month-view">
+    <div class="header">
+        <h2>{{ month_name }} {{ year }}</h2>
+        <div class="nav">
+            <a href="?mode=month&year={{ prev_year }}&month={{ prev_month }}">← {{ prev_month_name }}</a>
+            <a href="?mode=day&year={{ today.year }}&month={{ today.month }}&day={{ today.day }}">Сегодня</a>
+            <a href="?mode=month&year={{ next_year }}&month={{ next_month }}">{{ next_month_name }} →</a>
+        </div>
+    </div>
+
+    <div class="events-list">
+        <h3>Задачи на месяц:</h3>
+        {% for task in tasks %}
+        <div class="event">
+            <span class="date">{{ task.deadline|date:"d.m" }}</span>
+            <a href="{% url 'task_retrieve' task.pk %}">{{ task.description|truncatechars:50 }}</a>
+        </div>
+        {% empty %}
+        <p>Нет задач на этот месяц</p>
+        {% endfor %}
+
+        <h3>Встречи на месяц:</h3>
+        {% for meeting in meetings %}
+        <div class="event">
+            <span class="date">{{ meeting.start_datetime|date:"d.m H:i" }}</span>
+            <a href="{% url 'meeting_retrieve' meeting.pk %}">Встреча</a>
+            <span>({{ meeting.participants.count }} уч.)</span>
+        </div>
+        {% empty %}
+        <p>Нет встреч на этот месяц</p>
+        {% endfor %}
+    </div>
+</div>
+{% if tasks_without_deadline %}
+<h3>Задачи без срока</h3>
+<ul>
+    {% for task in tasks_without_deadline %}
+    <li>
+        <a href="{% url 'task_retrieve' task.pk %}">{{ task.description }}</a>
+        ({{ task.get_status_display }})
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

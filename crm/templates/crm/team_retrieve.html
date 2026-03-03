@@ -1,0 +1,59 @@
+{% extends 'crm/base.html' %}
+
+{% block content %}
+<div class="team-detail">
+    <div class="team-header">
+        <h1>{{ team.name }}</h1>
+        <a href="{% url 'task_list' team.pk %}" class="btn">📋 Задачи команды</a>
+    </div>
+
+    <div class="team-info">
+        <p><strong>Создатель:</strong> {{ team.creator.username }}</p>
+    </div>
+
+    <div class="members-section">
+        <h2>Состав команды</h2>
+
+        {% if team.members.all %}
+            {% for member in team.members.all %}
+            <div class="member-item">
+                <div class="member-info">
+                    <span class="member-role">{{ member.get_role_display }}</span>
+                    <span class="member-name">{{ member.user.username }}</span>
+                </div>
+
+                {# Управление участниками доступно создателю команды или админу по роли #}
+                {% if request.user == team.creator or user_role == 'admin' %}
+                <div class="member-actions">
+                    <a href="{% url 'team_update_user' team.pk member.user.pk %}" class="btn-small">Изменить роль</a>
+                    <form method="post" action="{% url 'team_delete_user' team.pk member.user.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-small btn-danger" onclick="return confirm('Удалить участника?')">Удалить</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="empty">В команде нет участников</p>
+        {% endif %}
+    </div>
+
+    {# Добавление участников доступно создателю команды или админу по роли #}
+    {% if request.user == team.creator or user_role == 'admin' %}
+    <div class="add-member-section">
+        <h3>Добавить участника</h3>
+        <form method="post" action="{% url 'team_add_user' team.pk %}" class="add-member-form">
+            {% csrf_token %}
+            <select name="user_pk" required>
+                <option value="" disabled selected>-- Выберите пользователя --</option>
+                {% for user in available_users %}
+                <option value="{{ user.pk }}">{{ user.username }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn">Добавить</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'crm/base.html' %}
+
+{% block content %}
+<div class="form-container">
+    <h1>Добавление пользователя в команду</h1>
+
+    {# Добавлять пользователей может создатель команды или админ по роли #}
+    {% if request.user == team.creator or user_role == 'admin' %}
+    <form method="post" class="form">
+        {% csrf_token %}
+
+        {% for field in form %}
+        <div class="form-group">
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.errors %}
+                <div class="error">{{ field.errors }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Добавить</button>
+            <a href="{% url 'team_retrieve' team.pk %}" class="btn">Отмена</a>
+        </div>
+    </form>
+    {% else %}
+        <p>У вас нет прав для добавления пользователей в эту команду.</p>
+        <a href="{% url 'team_retrieve' team.pk %}" class="btn">Назад к команде</a>
+    {% endif %}
+</div>
+{% endblock %}

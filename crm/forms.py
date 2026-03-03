@@ -1,8 +1,9 @@
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.forms import ModelForm
 
-from crm.models import Team, TeamUser, Task, Evaluation, Meeting, MeetingUser
+from crm.models import Team, TeamUser, Task, Evaluation, Meeting, MeetingUser, Comment
 
 
 class RegisterForm(forms.ModelForm):
@@ -81,7 +82,10 @@ class UpdateUserTeamRoleForm(forms.ModelForm):
 class TaskCreateForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ["status", "description", "deadline"]
+        fields = ["name", "status", "description", "deadline"]
+        widgets = {
+            'deadline': forms.DateTimeInput(attrs={'type': 'datetime-local'})
+        }
 
 
 class TaskForm(forms.ModelForm):
@@ -92,6 +96,7 @@ class TaskForm(forms.ModelForm):
 
 class TaskUpdateForm(forms.ModelForm):
     class Meta:
+        model = Task
         fields = ["performer", "deadline", "description", "status"]
 
 
@@ -101,12 +106,19 @@ class EvaluationForm(forms.ModelForm):
         fields = ["evaluation"]
         widgets = {"evaluation": forms.Select}
 
+class CommentCreateForm(ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['text']
 
 class MeetingCreateForm(forms.ModelForm):
     class Meta:
         model = Meeting
         fields = ["start_datetime", "end_datetime", "name", "description"]
-
+        widgets = {
+            'start_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'end_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'})
+        }
 
 class MeetingAddUserForm(forms.ModelForm):
     class Meta:

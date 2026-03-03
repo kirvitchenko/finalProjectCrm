@@ -1,0 +1,32 @@
+{% extends 'crm/base.html' %}
+
+{% block content %}
+<div class="teams-header">
+    <h1>Команды</h1>
+
+    {# Только superuser может создавать команды #}
+    {% if request.user.is_superuser %}
+        <a href="{% url 'team_create' %}" class="btn btn-primary">+ Создать команду</a>
+    {% endif %}
+</div>
+
+<div class="teams-list">
+    {% if teams %}
+        {% for team in teams %}
+        <div class="team-card">
+            <div class="team-header">
+                <a href="{% url 'team_retrieve' team.pk %}" class="team-name">
+                    {{ team.name }}
+                </a>
+            </div>
+            <div class="team-meta">
+                <span>👤 Создатель: {{ team.creator.username }}</span>
+                <span>👥 Участников: {{ team.members.count }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty">Нет доступных команд</p>
+    {% endif %}
+</div>
+{% endblock %}

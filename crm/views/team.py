@@ -6,33 +6,39 @@ from django.views import View
 
 from crm.forms import TeamForm, UpdateUserTeamRoleForm
 from crm.models import Team, TeamUser
-from crm.permissions import AdminRequiredMixin, ManagerRequiredMixin
+from crm.permissions import AdminRequiredMixin, ManagerRequiredMixin, StaffRequiredMixin
 
 
-class TeamCreateView(View):
-    @staff_member_required
+class TeamCreateView(StaffRequiredMixin, View):
     def get(self, request):
         form = TeamForm()
-        return render(request, "team_create.html", {"form": form})
+        return render(request, "crm/team_create.html", {"form": form})
 
-    @staff_member_required
     def post(self, request):
         form = TeamForm(request.POST)
         if form.is_valid():
             team = form.save(commit=False)
             team.creator = request.user
             team.save()
-            TeamUser.objects.create(
-                user=request.user, team=team, role=TeamUser.Role.ADMIN
-            )
-            return redirect("team_profile", team_pk=team.pk)
-        return render(request, "team_create.html", {"form": form})
+            return redirect("team_retrieve", team_pk=team.pk)
+        return render(request, "crm/team_create.html", {"form": form})
+
+
+class TeamListView(View):
+    def get(self, request):
+        teams = Team.objects.all()
+        return render(request, "crm/team_list.html", {"teams": teams})
 
 
 class TeamRetrieveView(View):
     def get(self, request, team_pk):
         team = get_object_or_404(Team.objects.prefetch_related("members"), pk=team_pk)
-        return render(request, "team_retrieve.html", {"team": team})
+        available_users = User.objects.exclude(memberships__isnull=False)
+        return render(
+            request,
+            "crm/team_retrieve.html",
+            {"team": team, "available_users": available_users},
+        )
 
 
 class BaseTeamView(View):
@@ -49,7 +55,8 @@ class BaseTeamView(View):
 
 
 class TeamAddUser(AdminRequiredMixin, BaseTeamView):
-    def post(self, request, team_pk, user_pk):
+    def post(self, request, team_pk):
+        user_pk = request.POST.get("user_pk")
         team = self.get_team(team_pk)
         user = self.get_user(user_pk)
         if TeamUser.objects.filter(user=user).exists():
@@ -76,12 +83,12 @@ class TeamDeleteUser(AdminRequiredMixin, BaseTeamView):
         return redirect("team_retrieve", team_pk=team_pk)
 
 
-class TeamUpdateUserRole(AdminRequiredMixin ,BaseTeamView):
+class TeamUpdateUserRole(AdminRequiredMixin, BaseTeamView):
     def get(self, request, team_pk, user_pk):
         team_user = self.get_team_user(team_pk, user_pk)
         form = UpdateUserTeamRoleForm(instance=team_user)
         return render(
-            request, "role_update.html", {"form": form, "team_user": team_user}
+            request, "crm/team_role_update.html", {"form": form, "team_user": team_user}
         )
 
     def post(self, request, team_pk, user_pk):
@@ -91,5 +98,5 @@ class TeamUpdateUserRole(AdminRequiredMixin ,BaseTeamView):
             form.save()
             return redirect("team_retrieve", team_pk=team_pk)
         return render(
-            request, "role_update.html", {"form": form, "team_user": team_user}
+            request, "crm/team_role_update.html", {"form": form, "team_user": team_user}
         )

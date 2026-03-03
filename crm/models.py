@@ -83,10 +83,11 @@ class Task(models.Model):
     performer = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="assigned_tasks"
     )
+    name = models.CharField(max_length=200)
     team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name="tasks")
     status = models.CharField(choices=Status, default=Status.open, max_length=20)
     description = models.TextField()
-    deadline = models.DateTimeField(null=True)
+    deadline = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(null=True, auto_now=True)
 
@@ -173,6 +174,8 @@ class MeetingUser(models.Model):
         """
         Проверяем правило, согласно которому пользователь не может быть одновременно записан на более чем одну встречу
         """
+        if not self.meeting or not self.user:
+            return
         overlapping = Meeting.objects.filter(
             participants__user=self.user,
             start_datetime__lt=self.meeting.end_datetime,

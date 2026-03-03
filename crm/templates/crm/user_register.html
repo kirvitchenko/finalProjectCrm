@@ -1,9 +1,32 @@
 {% extends 'crm/base.html' %}
 
 {% block content %}
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Отправить</button>
-</form>
+<div class="form-container">
+    <h1>Регистрация</h1>
+
+    <form method="post" class="form">
+        {% csrf_token %}
+
+        {% for field in form %}
+        <div class="form-group">
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.errors %}
+                <div class="error">{{ field.errors }}</div>
+            {% endif %}
+            {% if field.help_text %}
+                <small class="help-text">{{ field.help_text }}</small>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+        </div>
+
+        <div class="form-footer">
+            <p>Уже есть аккаунт? <a href="{% url 'user_login' %}">Войти</a></p>
+        </div>
+    </form>
+</div>
 {% endblock %}

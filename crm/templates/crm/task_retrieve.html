@@ -1,0 +1,107 @@
+{% extends 'crm/base.html' %}
+
+{% block content %}
+<div class="task-detail">
+    <div class="task-header">
+        <h1>Задача #{{ task.pk }}</h1>
+        <div class="task-status status-{{ task.status }}">{{ task.get_status_display }}</div>
+    </div>
+
+    <div class="task-description">
+        <p>{{ task.description }}</p>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-item">
+            <span class="label">Автор:</span>
+            <span class="value">{{ task.author.username }}</span>
+        </div>
+        <div class="info-item">
+            <span class="label">Исполнитель:</span>
+            <span class="value">{{ task.performer.username }}</span>
+        </div>
+        <div class="info-item">
+            <span class="label">Команда:</span>
+            <span class="value">{{ task.team.name }}</span>
+        </div>
+        <div class="info-item">
+            <span class="label">Дедлайн:</span>
+            <span class="value">{{ task.deadline|date:"d.m.Y H:i" }}</span>
+        </div>
+        <div class="info-item">
+            <span class="label">Создана:</span>
+            <span class="value">{{ task.created_at|date:"d.m.Y H:i" }}</span>
+        </div>
+        <div class="info-item">
+            <span class="label">Обновлена:</span>
+            <span class="value">{{ task.updated_at|date:"d.m.Y H:i" }}</span>
+        </div>
+    </div>
+
+    <div class="actions">
+            {% if request.user == task.performer and task.status != 'done' %}
+        <form method="post" action="{% url 'task_done' task.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">✓ Отметить выполненным</button>
+        </form>
+        {% endif %}
+
+        {% if request.user == task.author or user_role == 'admin' or user_role == 'manager' %}
+        <a href="{% url 'task_update' task.pk %}" class="btn">✏️ Редактировать</a>
+        <form method="post" action="{% url 'task_delete' task.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Удалить задачу?')">🗑️ Удалить</button>
+        </form>
+        {% endif %}
+
+        <a href="{% url 'team_retrieve' task.team.pk %}" class="btn">← Назад к команде</a>
+    </div>
+
+    <div class="comments-section">
+        <h2>Комментарии</h2>
+
+        {% for comment in task.comments.all %}
+        <div class="comment">
+            <div class="comment-header">
+                <strong>{{ comment.user.username }}</strong>
+                <span class="comment-date">{{ comment.created_at|date:"d.m.Y H:i" }}</span>
+            </div>
+            <div class="comment-text">{{ comment.text }}</div>
+        </div>
+        {% empty %}
+        <p class="empty">Нет комментариев</p>
+        {% endfor %}
+
+        <div class="add-comment">
+            <h3>Добавить комментарий</h3>
+            <form method="post" action="{% url 'comment_create' task.pk %}">
+                {% csrf_token %}
+                <textarea name="text" rows="3" placeholder="Ваш комментарий..." required></textarea>
+                <button type="submit" class="btn">Отправить</button>
+            </form>
+        </div>
+    </div>
+
+    {# Оценка только для admin #}
+    {% if user_role == 'admin' %}
+    <div class="evaluation-section">
+        <h2>Оценка</h2>
+        {% if evaluation %}
+        <div class="current-evaluation">
+            Текущая оценка: <strong>{{ evaluation.get_evaluation_display }}</strong>
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'task_evaluate' task.pk %}" class="evaluation-form">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ evaluation_form.evaluation }}
+            </div>
+            <button type="submit" class="btn">
+                {% if evaluation %}Изменить оценку{% else %}Оценить{% endif %}
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'crm/base.html' %}
+
+{% block content %}
+<div class="tasks-header">
+    <h1>Задачи команды {{ team.name }}</h1>
+    
+    {% if user_role == 'admin' or user_role == 'manager' %}
+        <a href="{% url 'task_create' %}" class="btn btn-primary">+ Создать задачу</a>
+    {% endif %}
+</div>
+
+<div class="tasks-list">
+    {% if tasks %}
+        {% for task in tasks %}
+            {% if user_role == 'admin' or user_role == 'manager' or task.performer == request.user %}
+            <div class="task-card">
+                <div class="task-header">
+                    <a href="{% url 'task_retrieve' task.pk %}" class="task-title">
+                        {{ task.description|truncatechars:50 }}
+                    </a>
+                    <span class="status status-{{ task.status }}">{{ task.get_status_display }}</span>
+                </div>
+                <div class="task-meta">
+                    <span>👤 {{ task.performer.username }}</span>
+                    <span>📅 {{ task.deadline|date:"d.m.Y" }}</span>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <p class="empty">Нет доступных задач</p>
+    {% endif %}
+</div>
+{% endblock %}

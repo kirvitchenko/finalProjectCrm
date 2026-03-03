@@ -1,12 +1,15 @@
+```html
 {% extends 'crm/base.html' %}
 
 {% block content %}
 <div class="form-container">
-    <h1>Редактирование профиля</h1>
-
+    <h1>Редактирование задачи #{{ task.pk }}</h1>
+    
+    {# Проверка прав: автор, admin или manager могут редактировать #}
+    {% if request.user == task.author or user_role == 'admin' or user_role == 'manager' %}
     <form method="post" class="form">
         {% csrf_token %}
-
+        
         {% for field in form %}
         <div class="form-group">
             {{ field.label_tag }}
@@ -19,11 +22,16 @@
             {% endif %}
         </div>
         {% endfor %}
-
+        
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Сохранить</button>
-            <a href="{% url 'user_profile' user.pk %}" class="btn">Отмена</a>
+            <a href="{% url 'task_retrieve' task.pk %}" class="btn">Отмена</a>
         </div>
     </form>
+    {% else %}
+        <p>У вас нет прав для редактирования этой задачи.</p>
+        <a href="{% url 'task_retrieve' task.pk %}" class="btn">Назад к задаче</a>
+    {% endif %}
 </div>
 {% endblock %}
+```

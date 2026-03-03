@@ -1,0 +1,29 @@
+{% extends 'crm/base.html' %}
+
+{% block content %}
+<div class="meetings-header">
+    <h1>Мои встречи</h1>
+    <a href="{% url 'meeting_create' %}" class="btn btn-primary">+ Создать встречу</a>
+</div>
+
+<div class="meetings-list">
+    {% if meetings %}
+        {% for meeting_user in meetings %}
+        <div class="meeting-card">
+            <div class="meeting-header">
+                <a href="{% url 'meeting_retrieve' meeting_user.meeting.pk %}" class="meeting-title">
+                    Встреча {{ meeting_user.meeting.start_datetime|date:"d.m.Y H:i" }}
+                </a>
+                <span class="meeting-creator">Создатель: {{ meeting_user.meeting.creator.username }}</span>
+            </div>
+            <div class="meeting-meta">
+                <span>📅 {{ meeting_user.meeting.start_datetime|date:"d.m.Y H:i" }} - {{ meeting_user.meeting.end_datetime|date:"H:i" }}</span>
+                <span>👥 Участников: {{ meeting_user.meeting.participants.count }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty">У вас нет запланированных встреч</p>
+    {% endif %}
+</div>
+{% endblock %}

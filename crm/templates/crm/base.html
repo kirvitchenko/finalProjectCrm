@@ -3,13 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Мой сайт{% endblock %}</title>
+    <style>
+        nav { background: #f0f0f0; padding: 10px; display: flex; align-items: center; flex-wrap: wrap; }
+        nav a { margin-right: 15px; text-decoration: none; color: #333; }
+        nav a:hover { color: #007bff; }
+        .user-info { margin-left: auto; display: flex; align-items: center; gap: 15px; }
+        .user-info span { color: #666; }
+        button { background: none; border: none; color: #333; cursor: pointer; font-size: 16px; }
+        button:hover { color: #007bff; }
+    </style>
 </head>
 <body>
     <header>
         <nav>
             <a href="/home/">Главная</a>
-            <a href="/login/">Войти</a>
-            <a href="/register/">Зарегистрироваться</a>
+            <a href="/teams/">Команды</a>
+            <a href="{% url 'meeting_list' %}">Встречи</a>
+            <a href="{% url 'calendar' %}">Календарь</a>
+
+            {% if user.is_authenticated %}
+                <div class="user-info">
+                    <span>Привет, {{ user.username }}!</span>
+                    <a href="{% url 'user_profile' user.pk %}">Профиль</a>
+                    <form method="post" action="{% url 'user_logout' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit">Выйти</button>
+                    </form>
+                </div>
+            {% else %}
+                <div class="user-info">
+                    <a href="{% url 'user_login' %}">Войти</a>
+                    <a href="{% url 'user_register' %}">Зарегистрироваться</a>
+                </div>
+            {% endif %}
         </nav>
     </header>
 

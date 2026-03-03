@@ -59,14 +59,14 @@ class UserUpdateView(View, LoginRequiredMixin):
     def get(self, request, user_pk):
         user = get_object_or_404(User, pk=user_pk)
         if request.user != user:
-            raise PermissionDenied('Только владелец может редактировать аккаунт')
+            raise PermissionDenied("Только владелец может редактировать аккаунт")
         form = UserChangeForm(instance=user)
         return render(request, "crm/user_update.html", {"form": form})
 
     def post(self, request, user_pk):
         user = get_object_or_404(User, pk=user_pk)
         if request.user != user:
-            raise PermissionDenied('Только владелец может редактировать аккаунт')
+            raise PermissionDenied("Только владелец может редактировать аккаунт")
         form = UserChangeForm(request.POST, instance=user)
         if form.is_valid():
             form.save()
@@ -79,6 +79,6 @@ class UserDeleteView(View, LoginRequiredMixin):
     def post(self, request, user_pk):
         user = get_object_or_404(User, pk=user_pk)
         if request.user != user:
-            raise PermissionDenied('Только владелец может удалять аккаунт')
+            raise PermissionDenied("Только владелец может удалять аккаунт")
         user.delete()
         return redirect("home")

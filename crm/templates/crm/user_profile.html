@@ -1,24 +1,40 @@
-{% extends 'crm/base.html'%}
-
+{% extends 'crm/base.html' %}
 
 {% block content %}
 <div class="profile">
-    <h1>Профиль пользователя</h1>
-
-    <div class="user-info">
-        <p><strong>Логин:</strong> {{ user.username }}</p>
-        <p><strong>Email:</strong> {{ user.email }}</p>
+    <div class="profile-header">
+        <h1>Профиль пользователя</h1>
     </div>
 
-    <div class="actions">
-        <form method="get" action="{% url 'user_update' user.pk %}">
-    {% csrf_token %}
-    <button type="submit">Редактировать</button>
-</form>
-        <form method="post" action="{% url 'user_delete' user.pk %}">
-    {% csrf_token %}
-    <button type="submit">Удалить</button>
-</form>
+    <div class="profile-card">
+        <div class="info-item">
+            <span class="label">Логин:</span>
+            <span class="value">{{ user.username }}</span>
+        </div>
+        <div class="info-item">
+            <span class="label">Email:</span>
+            <span class="value">{{ user.email }}</span>
+        </div>
+        <div class="info-item">
+            <span class="label">Имя:</span>
+            <span class="value">{{ user.first_name|default:"не указано" }}</span>
+        </div>
+        <div class="info-item">
+            <span class="label">Фамилия:</span>
+            <span class="value">{{ user.last_name|default:"не указано" }}</span>
+        </div>
+        <div class="info-item">
+            <span class="label">Дата регистрации:</span>
+            <span class="value">{{ user.date_joined|date:"d.m.Y" }}</span>
+        </div>
+    </div>
+
+    <div class="profile-actions">
+        <a href="{% url 'user_update' user.pk %}" class="btn">✏️ Редактировать</a>
+        <form method="post" action="{% url 'user_delete' user.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены?')">🗑️ Удалить</button>
+        </form>
     </div>
 </div>
 {% endblock %}

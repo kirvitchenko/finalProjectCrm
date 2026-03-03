@@ -1,0 +1,41 @@
+{% extends 'crm/base.html' %}
+
+{% block content %}
+<div class="day-view">
+    <div class="header">
+        <h2>{{ date|date:"d.m.Y" }}</h2>
+        <a href="?mode=month&year={{ date.year }}&month={{ date.month }}">К месяцу</a>
+    </div>
+
+    <h3>Задачи:</h3>
+    {% for task in tasks %}
+        <div>
+            <a href="{% url 'task_retrieve' task.pk %}">{{ task.description|truncatechars:50 }}</a>
+            - {{ task.deadline|time:"H:i" }}
+        </div>
+    {% empty %}
+        <div>Нет задач</div>
+    {% endfor %}
+
+    <h3>Встречи:</h3>
+    {% for meeting in meetings %}
+        <div>
+            <a href="{% url 'meeting_retrieve' meeting.pk %}">{{ meeting.start_datetime|time:"H:i" }} - {{ meeting.end_datetime|time:"H:i" }}</a>
+            ({{ meeting.participants.count }} уч.)
+        </div>
+    {% empty %}
+        <div>Нет встреч</div>
+    {% endfor %}
+</div>
+{% if tasks_without_deadline %}
+<h3>Задачи без срока</h3>
+<ul>
+    {% for task in tasks_without_deadline %}
+    <li>
+        <a href="{% url 'task_retrieve' task.pk %}">{{ task.description }}</a>
+        ({{ task.get_status_display }})
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

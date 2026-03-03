@@ -2,14 +2,15 @@
 
 {% block content %}
 <div class="form-container">
-    <h1>Редактирование профиля</h1>
+    <h1>Создание команды</h1>
 
+    {% if request.user.is_superuser %}
     <form method="post" class="form">
         {% csrf_token %}
 
         {% for field in form %}
         <div class="form-group">
-            {{ field.label_tag }}
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
             {% if field.errors %}
                 <div class="error">{{ field.errors }}</div>
@@ -21,9 +22,13 @@
         {% endfor %}
 
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Сохранить</button>
-            <a href="{% url 'user_profile' user.pk %}" class="btn">Отмена</a>
+            <button type="submit" class="btn btn-primary">Создать команду</button>
+            <a href="{% url 'team_list' %}" class="btn">Отмена</a>
         </div>
     </form>
+    {% else %}
+        <p>Только администратор может создавать команды.</p>
+        <a href="{% url 'team_list' %}" class="btn">Назад к списку</a>
+    {% endif %}
 </div>
 {% endblock %}
