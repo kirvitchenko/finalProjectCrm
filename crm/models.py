@@ -1,4 +1,3 @@
-from datetime import datetime
 from django.utils import timezone
 
 from django.contrib.auth.models import User
@@ -183,7 +182,9 @@ class MeetingUser(models.Model):
         ).exclude(pk=self.meeting.pk)
 
         if overlapping.exists():
-            raise ValidationError(...)
+            raise ValidationError(
+                "Пользователь не может единовременно учавствовать в двух встречах"
+            )
 
     def save(self, *args, **kwargs):
         self.full_clean()

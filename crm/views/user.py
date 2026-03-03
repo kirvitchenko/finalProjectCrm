@@ -10,11 +10,25 @@ from crm.models import Evaluation
 
 
 class UserRegisterView(View):
+    """
+    View для регистрации пользователя
+    """
+
     def get(self, request):
+        """
+        Получаем форму для регистрации
+        :param request:
+        :return:
+        """
         form = RegisterForm()
         return render(request, "crm/user_register.html", {"form": form})
 
     def post(self, request):
+        """
+        Обрабатывем форму для регистрации
+        :param request:
+        :return:
+        """
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
@@ -25,11 +39,24 @@ class UserRegisterView(View):
 
 
 class UserLoginView(View):
+    """
+    View для входа в аккаунт
+    """
+
     def get(self, request):
+        """
+        Получаем форму для входа
+        """
         clean_form = LoginForm()
         return render(request, "crm/user_login.html", {"form": clean_form})
 
     def post(self, request):
+        """
+        Проверяем корректность введенных данных
+        Создаем сессию
+        :param request:
+        :return:
+        """
         form = LoginForm(request.POST)
         if form.is_valid():
             login(request, form.user)
@@ -39,12 +66,20 @@ class UserLoginView(View):
 
 
 class UserLogoutView(View, LoginRequiredMixin):
+    """
+    View для выхода
+    """
+
     def post(self, request):
         logout(request)
         return redirect("home")
 
 
 class UserProfileView(View, LoginRequiredMixin):
+    """
+    View для просмотра профиля пользователя
+    """
+
     def get(self, request, user_pk):
         user = get_object_or_404(User, pk=user_pk)
         evaluations = Evaluation.objects.filter(task__performer=user).select_related(
@@ -56,7 +91,17 @@ class UserProfileView(View, LoginRequiredMixin):
 
 
 class UserUpdateView(View, LoginRequiredMixin):
+    """
+    View для обновления данных пользователя
+    """
+
     def get(self, request, user_pk):
+        """
+        Получаем форму для обновления
+        :param request:
+        :param user_pk:
+        :return:
+        """
         user = get_object_or_404(User, pk=user_pk)
         if request.user != user:
             raise PermissionDenied("Только владелец может редактировать аккаунт")
@@ -64,6 +109,12 @@ class UserUpdateView(View, LoginRequiredMixin):
         return render(request, "crm/user_update.html", {"form": form})
 
     def post(self, request, user_pk):
+        """
+        Проверяем заполенненую форму
+        :param request:
+        :param user_pk:
+        :return:
+        """
         user = get_object_or_404(User, pk=user_pk)
         if request.user != user:
             raise PermissionDenied("Только владелец может редактировать аккаунт")
@@ -76,6 +127,10 @@ class UserUpdateView(View, LoginRequiredMixin):
 
 
 class UserDeleteView(View, LoginRequiredMixin):
+    """
+    View для удаления пользователя
+    """
+
     def post(self, request, user_pk):
         user = get_object_or_404(User, pk=user_pk)
         if request.user != user:

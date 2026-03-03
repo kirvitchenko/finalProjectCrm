@@ -8,12 +8,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv()
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 
 INSTALLED_APPS = [
@@ -55,11 +54,9 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 
-
-
 DATABASES = {
     "default": {
-        "ENGINE": os.getenv('DB_ENGINE'),
+        "ENGINE": os.getenv("DB_ENGINE"),
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }

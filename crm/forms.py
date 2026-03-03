@@ -7,6 +7,10 @@ from crm.models import Team, TeamUser, Task, Evaluation, Meeting, MeetingUser, C
 
 
 class RegisterForm(forms.ModelForm):
+    """
+    Форма регистрация пользователя
+    """
+
     repeated_password = forms.CharField(widget=forms.PasswordInput)
 
     class Meta:
@@ -15,6 +19,10 @@ class RegisterForm(forms.ModelForm):
         widgets = {"password": forms.PasswordInput}
 
     def clean(self):
+        """
+        Проверяем что введенные пароль равны
+        :return:
+        """
         cleaned_data = super().clean()
         password = cleaned_data.get("password")
         repeated_password = cleaned_data.get("repeated_password")
@@ -24,12 +32,20 @@ class RegisterForm(forms.ModelForm):
         return cleaned_data
 
     def clean_email(self):
+        """
+        Проверяем на уникальность email при создании
+        :return:
+        """
         email = self.cleaned_data.get("email")
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("Пользователь с таким email уже существует")
         return email
 
     def clean_username(self):
+        """
+        Проверяем на уникальность username при создании
+        :return:
+        """
         username = self.cleaned_data.get("username")
         if User.objects.filter(username=username).exists():
             raise forms.ValidationError("Это имя пользователя уже занято")
@@ -44,10 +60,19 @@ class RegisterForm(forms.ModelForm):
 
 
 class LoginForm(forms.Form):
+    """
+    Форма для аутентификация пользователя
+    """
+
     email = forms.EmailField()
     password = forms.CharField(widget=forms.PasswordInput)
 
     def clean(self):
+        """
+        Проверяем что пользователь существует и ввел правильные данные
+        Если пользователь не существует или ввел неправльные данные выбрасываем исключение
+        :return:
+        """
         cleaned_data = super().clean()
         email = cleaned_data.get("email")
         password = cleaned_data.get("password")
@@ -62,65 +87,106 @@ class LoginForm(forms.Form):
 
 
 class UserChangeForm(forms.ModelForm):
+    """
+    Форма для редактирования профиля и данных пользователя
+    """
+
     class Meta:
         model = User
         fields = ["email", "username", "first_name", "last_name"]
 
 
 class TeamForm(forms.ModelForm):
+    """
+    Форма для создания команды
+    """
+
     class Meta:
         model = Team
         fields = ["name"]
 
 
 class UpdateUserTeamRoleForm(forms.ModelForm):
+    """
+    Форма для изменения роли пользователя в команде
+    """
+
     class Meta:
         model = TeamUser
         fields = ["role"]
 
 
 class TaskCreateForm(forms.ModelForm):
+    """
+    Форма для создания задачи
+    """
+
     class Meta:
         model = Task
         fields = ["name", "status", "description", "deadline"]
-        widgets = {
-            'deadline': forms.DateTimeInput(attrs={'type': 'datetime-local'})
-        }
+        widgets = {"deadline": forms.DateTimeInput(attrs={"type": "datetime-local"})}
 
 
 class TaskForm(forms.ModelForm):
+    """
+    Форма для просмотра одной задачи
+    """
+
     class Meta:
         model = Task
         fields = "__all__"
 
 
 class TaskUpdateForm(forms.ModelForm):
+    """
+    Форма для изменения данных задачи
+    """
+
     class Meta:
         model = Task
         fields = ["performer", "deadline", "description", "status"]
 
 
 class EvaluationForm(forms.ModelForm):
+    """
+    Форма для проставленния оценки за задачу
+    """
+
     class Meta:
         model = Evaluation
         fields = ["evaluation"]
         widgets = {"evaluation": forms.Select}
 
+
 class CommentCreateForm(ModelForm):
+    """
+    Форма для добавления комментария к задаче
+    """
+
     class Meta:
         model = Comment
-        fields = ['text']
+        fields = ["text"]
+
 
 class MeetingCreateForm(forms.ModelForm):
+    """
+    Форма для создания встречи
+    """
+
     class Meta:
         model = Meeting
         fields = ["start_datetime", "end_datetime", "name", "description"]
         widgets = {
-            'start_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'end_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'})
+            "start_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
 
+
 class MeetingAddUserForm(forms.ModelForm):
+    """
+    Форма для добавления пользователя в встречу
+    """
+
     class Meta:
         model = MeetingUser
         fields = ["user"]
