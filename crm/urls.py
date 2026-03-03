@@ -53,7 +53,7 @@ urlpatterns = [
     path("teams/", TeamListView.as_view(), name="team_list"),
 
     #Ссылки для работы с задачами
-    path('tasks/create/ ', TaskCreateView.as_view(), name='task_create'),
+    path('tasks/create/<int:team_pk>/', TaskCreateView.as_view(), name='task_create'),
     path('tasks/<int:task_pk>', TaskRetrieveView.as_view(), name='task_retrieve'),
     path('tasks/<int:task_pk>/update/', TaskUpdateView.as_view(), name='task_update'),
     path('tasks/<int:task_pk>/delete/', TaskDeleteView.as_view(), name='task_delete'),

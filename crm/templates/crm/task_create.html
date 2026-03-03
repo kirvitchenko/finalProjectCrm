@@ -4,7 +4,6 @@
 <div class="form-container">
     <h1>Создание задачи</h1>
 
-    {% if user_role == 'admin' or user_role == 'manager' %}
     <form method="post" class="form">
         {% csrf_token %}
 
@@ -23,9 +22,5 @@
             <a href="javascript:history.back()" class="btn">Отмена</a>
         </div>
     </form>
-    {% else %}
-        <p>У вас нет прав для создания задач.</p>
-        <a href="javascript:history.back()" class="btn">Назад</a>
-    {% endif %}
 </div>
 {% endblock %}

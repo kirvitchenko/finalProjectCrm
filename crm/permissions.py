@@ -10,7 +10,11 @@ class TeamRoleMixin:
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-
+        if request.user.is_superuser:
+            self.user = request.user
+            self.user_role = None
+            self.team = None
+            return super().dispatch(request, *args, **kwargs)
         print(f"=== TeamRoleMixin.dispatch ===")
         print(f"User: {request.user}")
         print(f"team_pk from kwargs: {kwargs.get('team_pk')}")
@@ -54,7 +58,8 @@ class AdminRequiredMixin(TeamRoleMixin):
 
 class ManagerRequiredMixin(TeamRoleMixin):
     def has_required_role(self):
-        return self.user_role in [TeamUser.Role.ADMIN, TeamUser.Role.MANAGER] or self.user.is_superuser()
+        print(f"user_role: {self.user_role}, is_superuser: {self.user.is_superuser}")
+        return self.user_role in [TeamUser.Role.ADMIN, TeamUser.Role.MANAGER] or self.user.is_superuser
 
     def get_required_role(self):
         return [TeamUser.Role.ADMIN, TeamUser.Role.MANAGER]
