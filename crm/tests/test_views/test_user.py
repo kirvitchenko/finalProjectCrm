@@ -31,7 +31,6 @@ def test_login_success(client, user):
     assert response.status_code == 302  # редирект
     assert response.url == f"/user/{user.pk}/profile/"  # куда редирект
 
-    # Проверяем, что пользователь действительно залогинен
     response = client.get(response.url)
     assert response.status_code == 200
     assert response.context["user"].is_authenticated

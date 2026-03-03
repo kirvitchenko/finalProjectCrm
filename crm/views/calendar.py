@@ -19,7 +19,6 @@ class CalendarView(LoginRequiredMixin, View):
     def get(self, request):
         today = timezone.now()
 
-        # Безопасное получение параметров
         try:
             year = int(request.GET.get("year", today.year))
             month = int(request.GET.get("month", today.month))
