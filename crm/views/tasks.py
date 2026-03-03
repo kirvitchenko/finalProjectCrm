@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
@@ -43,7 +44,7 @@ class TaskCreateView(ManagerRequiredMixin, View):
         return render(request, "crm/task_create.html", {"form": form})
 
 
-class TaskListView(View):
+class TaskListView(LoginRequiredMixin, View):
     """
     View для получения списка задач
 
@@ -81,7 +82,7 @@ class TaskListView(View):
         )
 
 
-class TaskRetrieveView(View):
+class TaskRetrieveView(LoginRequiredMixin, View):
     """
     View для получения задачи
     """
@@ -102,7 +103,7 @@ class TaskRetrieveView(View):
         return render(request, "crm/task_retrieve.html", context)
 
 
-class TaskUpdateView(View):
+class TaskUpdateView(LoginRequiredMixin, View):
     """
     View для изменения задачи
     """
@@ -140,7 +141,7 @@ class TaskUpdateView(View):
         return render(request, "crm/task_update.html", {"form": form, "task": task})
 
 
-class TaskDoneView(View):
+class TaskDoneView(LoginRequiredMixin, View):
     """
     View для того что бы отметить задачу как выполненную
     """
@@ -160,7 +161,7 @@ class TaskDoneView(View):
         return redirect("task_retrieve", task_pk=task.pk)
 
 
-class TaskDeleteView(View):
+class TaskDeleteView(LoginRequiredMixin, View):
     """
     View для того чтобы удалить задачу
     """
@@ -189,7 +190,7 @@ class TaskEvaluationView(AdminRequiredMixin, View):
         return redirect("task_retrieve", task_pk=task.pk)
 
 
-class CommentCreateView(View):
+class CommentCreateView(LoginRequiredMixin, View):
     """
     View для комментирования задачи
     """

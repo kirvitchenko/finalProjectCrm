@@ -191,6 +191,38 @@ pytest --cov=crm --cov-report=html
 
 ---
 
+## Примеры запросов и ответов
+
+### Регистрация
+
+**Запрос:**
+```http
+POST /register/
+Content-Type: application/x-www-form-urlencoded
+
+email=user@example.com&username=john&password=123456&repeated_password=123456
+Ответ: Редирект на /user/1/profile/
+
+Вход
+Запрос:
+
+http
+POST /login/
+Content-Type: application/x-www-form-urlencoded
+
+email=user@example.com&password=123456
+Ответ: Редирект на /user/1/profile/
+
+Создание команды (только admin)
+Запрос:
+
+http
+POST /teams/create
+Content-Type: application/x-www-form-urlencoded
+
+name=Разработчики
+Ответ: Редирект на /teams/1/
+
 ## 📦 Зависимости
 
 - Django 6.0+

@@ -1,14 +1,15 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
-from rest_framework.exceptions import PermissionDenied
 
 from crm.forms import MeetingCreateForm
 from crm.models import MeetingUser, Meeting
 
 
-class MeetingCreateView(View):
+class MeetingCreateView(LoginRequiredMixin, View):
     """
     View для создания встречи
     """
@@ -40,7 +41,7 @@ class MeetingCreateView(View):
         return render(request, "crm/meeting_create.html", {"form": form})
 
 
-class MeetingAddUserView(View):
+class MeetingAddUserView(LoginRequiredMixin, View):
     """
     View для добавления пользователя к встрече
     """
@@ -68,7 +69,7 @@ class MeetingAddUserView(View):
         return redirect("meeting_retrieve", meeting_pk=meeting.pk)
 
 
-class MeetingRetrieveView(View):
+class MeetingRetrieveView(LoginRequiredMixin, View):
     """
     View одной встречи
     """
@@ -96,7 +97,7 @@ class MeetingRetrieveView(View):
         )
 
 
-class MeetingCancelView(View):
+class MeetingCancelView(LoginRequiredMixin, View):
     """
     View для отмены встречи
     """
@@ -115,7 +116,7 @@ class MeetingCancelView(View):
         return redirect("user_profile", user_pk=meeting.creator.pk)
 
 
-class MeetingListView(View):
+class MeetingListView(LoginRequiredMixin, View):
     """
     View Списка встреч
     """

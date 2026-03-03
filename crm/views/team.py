@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.shortcuts import redirect, render, get_object_or_404
 from django.views import View
@@ -38,7 +39,7 @@ class TeamCreateView(StaffRequiredMixin, View):
         return render(request, "crm/team_create.html", {"form": form})
 
 
-class TeamListView(View):
+class TeamListView(LoginRequiredMixin, View):
     """
     View для списка команд
     """
@@ -48,7 +49,7 @@ class TeamListView(View):
         return render(request, "crm/team_list.html", {"teams": teams})
 
 
-class TeamRetrieveView(View):
+class TeamRetrieveView(LoginRequiredMixin, View):
     """
     View для одной команды
     """
@@ -69,7 +70,7 @@ class TeamRetrieveView(View):
         )
 
 
-class BaseTeamView(View):
+class BaseTeamView(LoginRequiredMixin, View):
     """Базовый класс для всех views, работающих с командами"""
 
     def get_team(self, team_pk):

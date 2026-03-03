@@ -12,7 +12,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['0.0.0.0']
 
 
 INSTALLED_APPS = [
@@ -88,6 +88,7 @@ USE_TZ = True
 
 
 STATIC_URL = "static/"
+LOGIN_URL = 'user_login'
 
 
 INSTALLED_APPS += ["crm"]

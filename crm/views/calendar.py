@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
 from django.utils import timezone
 from datetime import datetime
@@ -6,7 +7,7 @@ from django.views import View
 from crm.models import Meeting, Task
 
 
-class CalendarView(View):
+class CalendarView(LoginRequiredMixin, View):
     """
     Единый календарь для отображения задач и встреч
 

@@ -20,7 +20,7 @@ class TeamRoleMixin:
     def dispatch(self, request, *args, **kwargs):
 
         if not request.user.is_authenticated:
-            return self.handle_no_permission()
+            return redirect('user_login')
         if request.user.is_superuser:
             self.user = request.user
             self.user_role = None
