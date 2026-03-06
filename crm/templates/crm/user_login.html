@@ -7,6 +7,14 @@
     <form method="post" class="form">
         {% csrf_token %}
 
+        {% if form.non_field_errors %}
+        <div class="errors">
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         {% for field in form %}
         <div class="form-group">
             {{ field.label_tag }}
