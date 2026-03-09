@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.db import transaction, IntegrityError
 from django.shortcuts import redirect, render, get_object_or_404
 from django.views import View
 
@@ -32,10 +33,14 @@ class TeamCreateView(StaffRequiredMixin, View):
         """
         form = TeamForm(request.POST)
         if form.is_valid():
-            team = form.save(commit=False)
-            team.creator = request.user
-            team.save()
-            return redirect("team_retrieve", team_pk=team.pk)
+            try:
+                with transaction.atomic():
+                    team = form.save(commit=False)
+                    team.creator = request.user
+                    team.save()
+                    return redirect("team_retrieve", team_pk=team.pk)
+            except IntegrityError as e:
+                messages.error(request, f"Ошибка в форме: {e}")
         return render(request, "crm/team_create.html", {"form": form})
 
 
@@ -92,14 +97,19 @@ class TeamAddUser(AdminRequiredMixin, BaseTeamView):
         user_pk = request.POST.get("user_pk")
         team = self.get_team(team_pk)
         user = self.get_user(user_pk)
-        if TeamUser.objects.filter(user=user).exists():
-            messages.error(
-                request, f"Пользователь {user.username} уже состоит в команде"
-            )
-            return redirect("team_retrieve", team_pk=team_pk)
 
-        TeamUser.objects.create(user=user, team=team, role=TeamUser.Role.USER)
-        messages.success(request, f"Пользователь {user.username} добавлен в команду")
+        try:
+            _, created = TeamUser.objects.get_or_create(
+                user=user,
+                team=team,
+                defaults={'role': TeamUser.Role.USER}
+            )
+            if created:
+                messages.success(request, f"Пользователь {user.username} добавлен")
+            else:
+                messages.warning(request, f"Пользователь {user.username} уже в команде")
+        except IntegrityError as e:
+            messages.error(request,f"Ошибка: {e}")
         return redirect("team_retrieve", team_pk=team_pk)
 
 
@@ -114,9 +124,11 @@ class TeamDeleteUser(AdminRequiredMixin, BaseTeamView):
         if team_user.team.creator == team_user.user:
             messages.error(request, "Нельзя удалить создателя команды")
             return redirect("team_retrieve", team_pk=team_pk)
-
-        team_user.delete()
-        messages.success(request, "Пользователь удален из команды")
+        try:
+            team_user.delete()
+            messages.success(request, "Пользователь удален из команды")
+        except IntegrityError as e:
+            messages.error(request,f"Ошибка в форме: {e}")
         return redirect("team_retrieve", team_pk=team_pk)
 
 
@@ -150,8 +162,11 @@ class TeamUpdateUserRole(AdminRequiredMixin, BaseTeamView):
         team_user = self.get_team_user(team_pk, user_pk)
         form = UpdateUserTeamRoleForm(request.POST, instance=team_user)
         if form.is_valid():
-            form.save()
-            return redirect("team_retrieve", team_pk=team_pk)
+            try:
+                form.save()
+                return redirect("team_retrieve", team_pk=team_pk)
+            except IntegrityError as e:
+                messages.error(request,f"Ошибка: {e}")
         return render(
             request, "crm/team_role_update.html", {"form": form, "team_user": team_user}
         )

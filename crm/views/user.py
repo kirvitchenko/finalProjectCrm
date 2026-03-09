@@ -1,12 +1,15 @@
+from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 
 from crm.forms import LoginForm, RegisterForm, UserChangeForm
 from crm.models import Evaluation
+from crm.permissions import UserDataOwnerMixin
 
 
 class UserRegisterView(View):
@@ -31,11 +34,13 @@ class UserRegisterView(View):
         """
         form = RegisterForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect("user_profile", user_pk=user.pk)
-        else:
-            return render(request, "crm/user_register.html", {"form": form})
+            try:
+                user = form.save()
+                login(request, user)
+                return redirect("user_profile", user_pk=user.pk)
+            except IntegrityError as e:
+                messages.error(request,f"Ошибка в форме: {e}")
+        return render(request, "crm/user_register.html", {"form": form})
 
 
 class UserLoginView(View):
@@ -59,13 +64,15 @@ class UserLoginView(View):
         """
         form = LoginForm(request.POST)
         if form.is_valid():
-            login(request, form.user)
-            return redirect("user_profile", user_pk=form.user.pk)
-        else:
-            return render(request, "crm/user_login.html", {"form": form})
+            try:
+                login(request, form.user)
+                return redirect("user_profile", user_pk=form.user.pk)
+            except IntegrityError as e:
+                messages.error(request,f"Ошибка в форме: {e}")
+        return render(request, "crm/user_login.html", {"form": form})
 
 
-class UserLogoutView(View, LoginRequiredMixin):
+class UserLogoutView(LoginRequiredMixin, View):
     """
     View для выхода
     """
@@ -75,7 +82,7 @@ class UserLogoutView(View, LoginRequiredMixin):
         return redirect("home")
 
 
-class UserProfileView(View, LoginRequiredMixin):
+class UserProfileView(LoginRequiredMixin, View):
     """
     View для просмотра профиля пользователя
     """
@@ -90,7 +97,7 @@ class UserProfileView(View, LoginRequiredMixin):
         )
 
 
-class UserUpdateView(View, LoginRequiredMixin):
+class UserUpdateView(LoginRequiredMixin, UserDataOwnerMixin, View):
     """
     View для обновления данных пользователя
     """
@@ -102,10 +109,8 @@ class UserUpdateView(View, LoginRequiredMixin):
         :param user_pk:
         :return:
         """
-        user = get_object_or_404(User, pk=user_pk)
-        if request.user != user:
-            raise PermissionDenied("Только владелец может редактировать аккаунт")
-        form = UserChangeForm(instance=user)
+
+        form = UserChangeForm(instance=self.user)
         return render(request, "crm/user_update.html", {"form": form})
 
     def post(self, request, user_pk):
@@ -115,25 +120,25 @@ class UserUpdateView(View, LoginRequiredMixin):
         :param user_pk:
         :return:
         """
-        user = get_object_or_404(User, pk=user_pk)
-        if request.user != user:
-            raise PermissionDenied("Только владелец может редактировать аккаунт")
-        form = UserChangeForm(request.POST, instance=user)
+        form = UserChangeForm(request.POST, instance=self.user)
         if form.is_valid():
-            form.save()
-            return redirect("user_profile", user_pk=user.pk)
+            try:
+                form.save()
+                return redirect("user_profile", user_pk=self.user.pk)
+            except IntegrityError as e:
+                messages.error(request,f"Ошибка в форме: {e}")
         else:
             return render(request, "crm/user_update.html", {"form": form})
 
 
-class UserDeleteView(View, LoginRequiredMixin):
+class UserDeleteView(LoginRequiredMixin, UserDataOwnerMixin, View):
     """
     View для удаления пользователя
     """
 
     def post(self, request, user_pk):
-        user = get_object_or_404(User, pk=user_pk)
-        if request.user != user:
-            raise PermissionDenied("Только владелец может удалять аккаунт")
-        user.delete()
+        try:
+            self.user.delete()
+        except IntegrityError as e:
+            messages.error(request,f"Ошибка в форме: {e}")
         return redirect("home")

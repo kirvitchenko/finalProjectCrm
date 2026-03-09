@@ -1,12 +1,13 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
+from django.db import transaction, IntegrityError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 
 from crm.forms import MeetingCreateForm
 from crm.models import MeetingUser, Meeting
+from crm.permissions import MeetingCreatorMixin
 
 
 class MeetingCreateView(LoginRequiredMixin, View):
@@ -33,15 +34,19 @@ class MeetingCreateView(LoginRequiredMixin, View):
         """
         form = MeetingCreateForm(request.POST)
         if form.is_valid():
-            meeting = form.save(commit=False)
-            meeting.creator = request.user
-            meeting.save()
-            MeetingUser.objects.create(user=request.user, meeting=meeting)
-            return redirect("meeting_retrieve", meeting_pk=meeting.pk)
+            try:
+                with transaction.atomic():
+                    meeting = form.save(commit=False)
+                    meeting.creator = request.user
+                    meeting.save()
+                    MeetingUser.objects.create(user=request.user, meeting=meeting)
+                return redirect("meeting_retrieve", meeting_pk=meeting.pk)
+            except IntegrityError as e:
+                messages.error(request, f'Ошибка при сохранении: {e}')
         return render(request, "crm/meeting_create.html", {"form": form})
 
 
-class MeetingAddUserView(LoginRequiredMixin, View):
+class MeetingAddUserView(LoginRequiredMixin, MeetingCreatorMixin, View):
     """
     View для добавления пользователя к встрече
     """
@@ -55,18 +60,16 @@ class MeetingAddUserView(LoginRequiredMixin, View):
         :param meeting_pk:
         :return:
         """
-        meeting = get_object_or_404(Meeting, pk=meeting_pk)
-
-        if request.user != meeting.creator:
-            raise PermissionDenied("Только владелец может добавлять участников")
-
         user_pk = request.POST.get("user_pk")
         user = get_object_or_404(User, pk=user_pk)
 
-        MeetingUser.objects.get_or_create(meeting=meeting, user=user)
+        _, created = MeetingUser.objects.get_or_create(meeting=self.meeting, user=user)
 
-        messages.success(request, f"Пользователь {user.username} добавлен во встречу")
-        return redirect("meeting_retrieve", meeting_pk=meeting.pk)
+        if created:
+            messages.success(request, f"Пользователь {user.username} добавлен")
+        else:
+            messages.warning(request, f"Пользователь {user.username} уже во встрече")
+        return redirect("meeting_retrieve", meeting_pk=self.meeting.pk)
 
 
 class MeetingRetrieveView(LoginRequiredMixin, View):
@@ -97,7 +100,7 @@ class MeetingRetrieveView(LoginRequiredMixin, View):
         )
 
 
-class MeetingCancelView(LoginRequiredMixin, View):
+class MeetingCancelView(LoginRequiredMixin, MeetingCreatorMixin, View):
     """
     View для отмены встречи
     """
@@ -109,11 +112,13 @@ class MeetingCancelView(LoginRequiredMixin, View):
         :param meeting_pk:
         :return:
         """
-        meeting = get_object_or_404(Meeting, pk=meeting_pk)
-        if request.user != meeting.creator:
-            raise PermissionDenied("Только может отменить встречу")
-        meeting.delete()
-        return redirect("user_profile", user_pk=meeting.creator.pk)
+        try:
+            self.meeting.delete()
+            messages.success(request, "Встреча отменена")
+        except IntegrityError as e:
+            messages.error(request, f'Ошибка при сохранении: {e}')
+
+        return redirect("user_profile", user_pk=self.meeting.creator.pk)
 
 
 class MeetingListView(LoginRequiredMixin, View):
@@ -123,8 +128,9 @@ class MeetingListView(LoginRequiredMixin, View):
 
     def get(self, request):
         """Просто возвращаем список всех встреч"""
+        meetings = Meeting.objects.filter(participants__user=request.user)
         return render(
             request,
             "crm/meeting_list.html",
-            context={"meetings": request.user.meeting_participations.all()},
+            context={"meetings": meetings},
         )

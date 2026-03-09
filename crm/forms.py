@@ -146,6 +146,13 @@ class TaskUpdateForm(forms.ModelForm):
         model = Task
         fields = ["performer", "deadline", "description", "status"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields['performer'].queryset = User.objects.filter(
+                memberships__team=self.instance.team
+                )
+
 
 class EvaluationForm(forms.ModelForm):
     """
@@ -155,7 +162,7 @@ class EvaluationForm(forms.ModelForm):
     class Meta:
         model = Evaluation
         fields = ["evaluation"]
-        widgets = {"evaluation": forms.Select}
+        widgets = {"evaluation": forms.RadioSelect}
 
 
 class CommentCreateForm(ModelForm):

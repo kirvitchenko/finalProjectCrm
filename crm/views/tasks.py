@@ -1,15 +1,17 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
+from django.db import transaction, IntegrityError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 
 from crm.forms import TaskCreateForm, TaskUpdateForm, EvaluationForm, CommentCreateForm
 from crm.models import Task, Evaluation, Team, TeamUser
-from crm.permissions import ManagerRequiredMixin, check_task_owner, AdminRequiredMixin
+from crm.permissions import ManagerRequiredMixin, AdminRequiredMixin, TaskOwnerMixin, TaskPerformerMixin, \
+    MemberRequiredMixin, TaskTeamInjectorMixin
 
 
-class TaskCreateView(ManagerRequiredMixin, View):
+class TaskCreateView(LoginRequiredMixin, ManagerRequiredMixin, View):
     """
     View для создания задачи в команде
     """
@@ -34,13 +36,16 @@ class TaskCreateView(ManagerRequiredMixin, View):
         """
         form = TaskCreateForm(request.POST)
         if form.is_valid():
-            task = form.save(commit=False)
-            team = get_object_or_404(Team, pk=team_pk)
-            task.author = request.user
-            task.team = team
-            task.save()
-            return redirect("task_retrieve", task_pk=task.pk)
-        messages.error(request, "Ошибка в форме")
+            try:
+                with transaction.atomic():
+                    task = form.save(commit=False)
+                    team = get_object_or_404(Team, pk=team_pk)
+                    task.author = request.user
+                    task.team = team
+                    task.save()
+                return redirect("task_retrieve", task_pk=task.pk)
+            except IntegrityError as e:
+                messages.error(request, f"Ошибка в форме: {e}")
         return render(request, "crm/task_create.html", {"form": form})
 
 
@@ -77,7 +82,7 @@ class TaskListView(LoginRequiredMixin, View):
             {
                 "page_obj": page_obj,
                 "team_pk": team_pk,
-                "user_role": user_role,  # ← добавили
+                "user_role": user_role,
             },
         )
 
@@ -103,7 +108,7 @@ class TaskRetrieveView(LoginRequiredMixin, View):
         return render(request, "crm/task_retrieve.html", context)
 
 
-class TaskUpdateView(LoginRequiredMixin, View):
+class TaskUpdateView(LoginRequiredMixin, TaskOwnerMixin, View):
     """
     View для изменения задачи
     """
@@ -115,10 +120,8 @@ class TaskUpdateView(LoginRequiredMixin, View):
         :param task_pk:
         :return:
         """
-        task = get_object_or_404(Task, pk=task_pk)
-        check_task_owner(request.user, task)
-        form = TaskUpdateForm(instance=task)
-        return render(request, "crm/task_update.html", {"form": form, "task": task})
+        form = TaskUpdateForm(instance=self.task)
+        return render(request, "crm/task_update.html", {"form": form, "task": self.task})
 
     def post(self, request, task_pk):
         """
@@ -129,51 +132,52 @@ class TaskUpdateView(LoginRequiredMixin, View):
         :param task_pk:
         :return:
         """
-        task = get_object_or_404(Task, pk=task_pk)
-        check_task_owner(request.user, task)
-        form = TaskUpdateForm(request.POST, instance=task)  # ✅ form
+        form = TaskUpdateForm(request.POST, instance=self.task)
         if form.is_valid():
-            task = form.save(commit=False)
-            if task.performer:
-                task.status = Task.Status.processing
-            task.save()
-            return redirect("task_retrieve", task_pk=task.pk)
-        return render(request, "crm/task_update.html", {"form": form, "task": task})
+            try:
+                with transaction.atomic():
+                    task = form.save(commit=False)
+                    if task.performer:
+                        task.status = Task.Status.processing
+                    task.save()
+                    return redirect("task_retrieve", task_pk=task.pk)
+            except IntegrityError as e:
+                messages.error(request, f"Ошибка в форме: {e}")
+        return render(request, "crm/task_update.html", {"form": form, "task": self.task})
 
 
-class TaskDoneView(LoginRequiredMixin, View):
+class TaskDoneView(LoginRequiredMixin, TaskPerformerMixin, View):
     """
     View для того что бы отметить задачу как выполненную
     """
 
     def post(self, request, task_pk):
-        task = get_object_or_404(Task, pk=task_pk)
-
-        if request.user == task.performer:
-            task.status = Task.Status.done
-            task.save()
+        if self.task.status == Task.Status.done:
+            messages.warning(request, "Задача уже выполнена")
+            return redirect("task_retrieve", task_pk=self.task.pk)
+        try:
+            self.task.status = Task.Status.done
+            self.task.save()
             messages.success(request, "Задача отмечена как выполненная")
-        else:
-            messages.error(
-                request, "Только исполнитель может отметить задачу как выполненную"
-            )
-
-        return redirect("task_retrieve", task_pk=task.pk)
+        except IntegrityError as e:
+            messages.error(request, f"Ошибка: {e}")
+        return redirect("task_retrieve", task_pk=self.task.pk)
 
 
-class TaskDeleteView(LoginRequiredMixin, View):
+class TaskDeleteView(LoginRequiredMixin, TaskOwnerMixin, View):
     """
     View для того чтобы удалить задачу
     """
 
     def post(self, request, task_pk):
-        task = get_object_or_404(Task, pk=task_pk)
-        check_task_owner(request.user, task)
-        task.delete()
-        return redirect("team_retrieve", team_pk=task.team.pk)
+        try:
+            self.task.delete()
+        except IntegrityError as e:
+            messages.error(request, f"Ошибка: {e}")
+        return redirect("team_retrieve", team_pk=self.task.team.pk)
 
 
-class TaskEvaluationView(AdminRequiredMixin, View):
+class TaskEvaluationView(LoginRequiredMixin, TaskTeamInjectorMixin, AdminRequiredMixin, View):
     """
     View для оценки задачи
     """
@@ -190,17 +194,20 @@ class TaskEvaluationView(AdminRequiredMixin, View):
         return redirect("task_retrieve", task_pk=task.pk)
 
 
-class CommentCreateView(LoginRequiredMixin, View):
+class CommentCreateView(LoginRequiredMixin, TaskTeamInjectorMixin, MemberRequiredMixin, View):
     """
     View для комментирования задачи
     """
 
     def post(self, request, task_pk):
-        task = get_object_or_404(Task, pk=task_pk)
         form = CommentCreateForm(request.POST)
         if form.is_valid():
-            comment = form.save(commit=False)
-            comment.user = request.user
-            comment.task = task
-            comment.save()
+            try:
+                with transaction.atomic():
+                    comment = form.save(commit=False)
+                    comment.user = request.user
+                    comment.task = self.task
+                    comment.save()
+            except IntegrityError as e:
+                messages.error(request, f"Ошибка: {e}")
         return redirect("task_retrieve", task_pk=task_pk)
